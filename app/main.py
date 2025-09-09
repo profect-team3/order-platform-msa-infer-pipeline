@@ -4,6 +4,7 @@ import pandas as pd
 from autogluon.timeseries import TimeSeriesPredictor
 import os
 import mlflow
+from mlflow.artifacts import download_artifacts
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -47,14 +48,14 @@ def load_predictor() -> None:
             mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
         if uri.startswith("models:/") or uri.startswith("runs:/"):
-            local_path = mlflow.artifacts.download_artifacts(artifact_uri=uri)
+            local_path = download_artifacts(artifact_uri=uri)
         elif uri.startswith("mlflow-artifacts:/"):
             # Parse mlflow-artifacts URI to runs URI
             parts = uri.split("/")
             run_id = parts[1]
             path = "/".join(parts[3:])
             artifact_uri = f"runs:/{run_id}/artifacts/{path}"
-            local_path = mlflow.artifacts.download_artifacts(artifact_uri=artifact_uri)
+            local_path = download_artifacts(artifact_uri=artifact_uri)
             # TimeSeriesPredictor expects a directory
             local_path = os.path.dirname(local_path)
         else:
@@ -75,6 +76,7 @@ load_predictor()
 class PredictionRequest(BaseModel):
     store_id: str = "store_001"
     prediction_length: int = 24
+    data: list[dict] | None = None  # Optional: list of data records (e.g., from CSV)
 
 
 @app.get("/health")
@@ -92,16 +94,18 @@ async def predict(request: PredictionRequest):
     if predictor is None:
         return {"error": f"Model not loaded from {MODEL_PATH}"}
 
-    ts_df = pd.read_csv(DATA_PATH)
+    if request.data:
+        ts_df = pd.DataFrame(request.data)
+    else:
+        ts_df = pd.read_csv(DATA_PATH)
 
     predictions = predictor.predict(ts_df)
 
     result = predictions.reset_index()
-    result = result[result['item_id'] == request.store_id]
 
     return {
         "store_id": request.store_id,
-        "predictions": result[["timestamp", "mean"]].to_dict("records"),
+        "predictions": result[["timestamp", "sales_amount", "order_count"]].to_dict("records"),
         "prediction_length": request.prediction_length,
         "timestamp": pd.Timestamp.now().isoformat(),
     }
