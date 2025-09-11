@@ -3,7 +3,7 @@ name = "order-platform-msa-infer-pipeline"
 version = "0.1.0"
 description = "Inference service for order platform forecasting (FastAPI + AutoGluon)"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = "~=3.11.0"
 dependencies = [
     "apache-airflow>=3.0.6",
     "autogluon-timeseries==1.4.0",
@@ -12,6 +12,8 @@ dependencies = [
     "boto3",
     "s3fs",
     "python-dotenv",
+    "kafka-python",
+    "lz4",
 ]
 
 [dependency-groups]
