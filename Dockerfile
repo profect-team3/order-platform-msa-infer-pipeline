@@ -1,5 +1,8 @@
 FROM python:3.11-slim
 
+# build-essential 설치 (gcc 포함)
+RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
+
 # install uv via pip (bootstrap only)
 RUN pip install --no-cache-dir uv
 
@@ -22,5 +25,3 @@ ENV HOST=0.0.0.0 \
     DATA_PATH=data/serving_train_finetuned.csv
 
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "9082"]
-
-
