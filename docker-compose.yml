@@ -1,8 +1,8 @@
 version: '3.8'
 
-networks:
-  entity-repository_order-network:
-    external: true
+#networks:
+#  entity-repository_order-network:
+#    external: true
 
 services:
   infer:
@@ -21,8 +21,8 @@ services:
       - ./data:/app/data
     command: >
       sh -c "uv run uvicorn app.main:app --host 0.0.0.0 --port 9082 --reload"
-    networks:
-      - entity-repository_order-network
+    #networks:
+    #  - entity-repository_order-network
 
   mlflow:
     image: python:3.11-slim
@@ -38,8 +38,8 @@ services:
         pip install mlflow boto3 &&
         mlflow ui --host 0.0.0.0 --port 5000 --backend-store-uri ${MLFLOW_BACKEND_STORE_URI:-./mlruns} --default-artifact-root ${MLFLOW_ARTIFACT_ROOT:-./mlruns}
       "
-    networks:
-      - entity-repository_order-network
+    #networks:
+    #  - entity-repository_order-network
 
   kafka_consumer:
     build:
@@ -53,6 +53,5 @@ services:
       - ./data:/app/data
     environment:
       - KAFKA_BROKER_URL=broker1:29092,broker2:29092,broker3:29092
-      - MODEL_URI=/app/models/latest
-    networks:
-      - entity-repository_order-network
+    #networks:
+    #  - entity-repository_order-network
