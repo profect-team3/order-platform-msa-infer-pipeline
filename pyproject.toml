@@ -11,11 +11,10 @@ dependencies = [
     "mlflow>=3.3.2",
     "boto3",
     "s3fs",
-    "gcsfs",
-    "google-cloud-storage",
     "python-dotenv",
     "kafka-python",
     "lz4",
+    "gcsfs",
 ]
 
 [dependency-groups]
