@@ -1,20 +1,25 @@
-FROM python:3.11-slim
+# 빌드 단계
+FROM python:3.11-slim AS builder
 
-# build-essential 설치 (gcc 포함)
-RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
-
-# install uv via pip (bootstrap only)
-RUN pip install --no-cache-dir uv
+RUN apt-get update && \
+    apt-get install -y build-essential gcc g++ && \
+    pip install --no-cache-dir uv && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-# copy project metadata first for layer caching
 COPY pyproject.toml uv.lock* ./
+RUN uv pip install --system --no-cache-dir .
 
-# install deps with uv
-RUN uv sync
+# 최종 단계
+FROM python:3.11-slim
 
-# copy app code
+RUN apt-get update && \
+    apt-get install -y gcc g++ && \
+    pip install --no-cache-dir uv && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=builder /app .
 COPY app/ ./app/
 
 EXPOSE 9082
