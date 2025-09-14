@@ -1,0 +1,59 @@
+version: '3.8'
+
+networks:
+  entity-repository_order-network:
+    external: true
+
+services:
+  infer:
+    build: .
+    ports:
+      - "9082:9082"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=9082
+      - MODEL_PATH=models/latest
+      - DATA_PATH=data/serving_train_finetuned.csv
+      - MODEL_URI=/app/AutogluonModels/ag-20250909_084146
+    volumes:
+      - ./app:/app/app
+      - ./models:/app/models
+      - ./data:/app/data
+      - /Users/coldbrew_groom/Documents/order-platform-mlops/order-platform-msa-train-pipeline/AutogluonModels:/app/AutogluonModels
+    command: >
+      sh -c "uv run uvicorn app.main:app --host 0.0.0.0 --port 9082 --reload"
+    networks:
+      - entity-repository_order-network
+
+  mlflow:
+    image: python:3.11-slim
+    ports:
+      - "8001:5000"
+    volumes:
+      - ./experiments:/app/experiments
+      - ./models:/app/models
+      - ./mlruns:/app/mlruns
+    working_dir: /app
+    command: >
+      sh -c "
+        pip install mlflow boto3 &&
+        mlflow ui --host 0.0.0.0 --port 5000 --backend-store-uri ${MLFLOW_BACKEND_STORE_URI:-./mlruns} --default-artifact-root ${MLFLOW_ARTIFACT_ROOT:-./mlruns}
+      "
+    networks:
+      - entity-repository_order-network
+
+  kafka_consumer:
+    build:
+      context: .
+      dockerfile: kafka_consumer/Dockerfile
+    depends_on:
+      - infer
+    volumes:
+      - ./kafka_consumer:/app/kafka_consumer
+      - ./models:/app/models
+      - ./data:/app/data
+    environment:
+      - KAFKA_BROKER_URL=broker1:29092,broker2:29092,broker3:29092
+      - MODEL_URI=/app/models/latest
+    networks:
+      - entity-repository_order-network
