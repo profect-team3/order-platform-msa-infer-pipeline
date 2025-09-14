@@ -15,6 +15,7 @@ dependencies = [
     "kafka-python",
     "lz4",
     "gcsfs",
+    "google-cloud-storage",
 ]
 
 [dependency-groups]
