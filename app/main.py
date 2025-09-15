@@ -60,7 +60,7 @@ class RealDataItem(BaseModel):
     dayOfWeek: int
     hour: int
     minOrderAmount: int
-    avgRating: int
+    avgRating: float
 
 class PredictionRequest(BaseModel):
     data: List[RealDataItem] = Field(..., alias="realDataItemList")
