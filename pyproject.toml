@@ -16,6 +16,8 @@ dependencies = [
     "lz4",
     "gcsfs",
     "google-cloud-storage",
+    "fastapi",
+    "pydantic",
 ]
 
 [dependency-groups]

@@ -1,3 +1,4 @@
+import logging
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from typing import List
@@ -5,8 +6,11 @@ import pandas as pd
 from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
 from dotenv import load_dotenv
 from datetime import datetime
+import os
 
 load_dotenv()
+
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title="Order Platform Forecasting API", version="1.0.0")
 
@@ -14,27 +18,32 @@ LOCAL_PREDICTOR_PATH = "."
 
 
 def download_gcs_folder(local_path):
-    # gcsfs 또는 google-cloud-storage 사용
     import gcsfs
     fs = gcsfs.GCSFileSystem()
-    import os
     GCS_MODEL_BUCKET = os.environ.get("GCS_MODEL_BUCKET")
     GCS_MODEL_PATH = os.environ.get("GCS_MODEL_PATH")
 
     if not GCS_MODEL_BUCKET or not GCS_MODEL_PATH:
         raise ValueError("GCS_MODEL_BUCKET or GCS_MODEL_PATH environment variables not set")
+        
+    if not os.path.exists(local_path):
+        os.makedirs(local_path)
 
     gcs_full_path = f"gs://{GCS_MODEL_BUCKET}/{GCS_MODEL_PATH}"
-    fs.get(gcs_full_path, local_path)
+    fs.get(gcs_full_path, local_path, recursive=True)
 
 predictor = None
 
 def load_predictor(local_path) -> None:
     global predictor
-    download_gcs_folder(local_path)
-    # predictor = TimeSeriesPredictor.load(local_path)
-    predictor = TimeSeriesPredictor.load(local_path, require_version_match=False)
-
+    try:
+        download_gcs_folder(local_path)
+        actual_model_path = os.path.join(local_path, "model_artifact")
+        predictor = TimeSeriesPredictor.load(actual_model_path, require_version_match=False)
+        logging.info("Predictor loaded successfully.")
+    except Exception as e:
+        logging.error(f"Error loading predictor: {e}", exc_info=True)
+        raise
 
 load_predictor('model_artifact')
 

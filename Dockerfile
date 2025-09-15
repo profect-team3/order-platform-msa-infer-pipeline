@@ -19,8 +19,11 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY --from=builder /app .
-COPY app/ ./app/
+
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+RUN uv pip install --system uvicorn
 
 EXPOSE 9082
 
@@ -28,5 +31,7 @@ ENV HOST=0.0.0.0 \
     PORT=9082 \
     MODEL_PATH=models/latest \
     DATA_PATH=data/serving_train_finetuned.csv
+
+COPY app /app/app
 
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "9082"]
