@@ -17,7 +17,15 @@ def download_gcs_folder(local_path):
     # gcsfs 또는 google-cloud-storage 사용
     import gcsfs
     fs = gcsfs.GCSFileSystem()
-    fs.get('gs://us-central1-mlpipeline-comp-9bf7861c-bucket/model_artifact/1/b193f6501c5d47faba699f403dee68f4/artifacts/predictor/model_artifact', local_path)
+    import os
+    GCS_MODEL_BUCKET = os.environ.get("GCS_MODEL_BUCKET")
+    GCS_MODEL_PATH = os.environ.get("GCS_MODEL_PATH")
+
+    if not GCS_MODEL_BUCKET or not GCS_MODEL_PATH:
+        raise ValueError("GCS_MODEL_BUCKET or GCS_MODEL_PATH environment variables not set")
+
+    gcs_full_path = f"gs://{GCS_MODEL_BUCKET}/{GCS_MODEL_PATH}"
+    fs.get(gcs_full_path, local_path)
 
 predictor = None
 
