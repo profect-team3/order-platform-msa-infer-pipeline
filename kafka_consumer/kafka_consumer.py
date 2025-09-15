@@ -41,7 +41,7 @@ def save_data_locally(data, file_path):
         with open(file_path, 'a', newline='') as f:
             writer = csv.writer(f)
             if not file_exists:
-                writer.writerow(['storeId', 'totalPrice', 'timestamp'])
+                writer.writerow(['timestamp', 'storeId', 'totalPrice', 'min_order_amount', 'category_main', 'category_sub', 'category_item', 'region', 'avg_rating'])
             writer.writerow(data)
     except IOError as e:
         print(f"Error writing to file {file_path}: {e}")
@@ -57,6 +57,12 @@ if __name__ == "__main__":
             data = message.value
             store_id = data.get('storeId')
             total_price = data.get('totalPrice')
+            min_order_amount = data.get('min_order_amount')
+            region = data.get('region')
+            category_main = data.get('category_main')
+            category_sub = data.get('category_sub')
+            category_item = data.get('category_item')
+            avg_rating = data.get('avg_rating')
 
             message_timestamp_ms = message.timestamp
             dt_utc = datetime.fromtimestamp(message_timestamp_ms / 1000, tz=timezone.utc)
@@ -66,8 +72,8 @@ if __name__ == "__main__":
             timestamp_str = dt_kst.isoformat()
 
             if store_id is not None and total_price is not None:
-                print(f"Received: timestamp={timestamp_str}, storeId={store_id}, totalPrice={total_price}")
-                row_to_save = [timestamp_str, store_id, total_price]
+                print(f"Received: timestamp={timestamp_str}, storeId={store_id}, totalPrice={total_price}, min_order_amount={min_order_amount}, category_sub={category_sub}, category_main={category_main}, avg_rating={avg_rating}, category_item={category_item}, region={region}")
+                row_to_save = [timestamp_str, store_id, total_price, min_order_amount, category_sub, category_main, category_item, region, avg_rating]
                 save_data_locally(row_to_save, SAVE_PATH)
             else:
                 print(f"Skipping message due to missing 'storeId' or 'totalPrice': {data}")
