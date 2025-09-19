@@ -14,6 +14,10 @@ dependencies = [
     "python-dotenv",
     "kafka-python",
     "lz4",
+    "gcsfs",
+    "google-cloud-storage",
+    "fastapi",
+    "pydantic",
 ]
 
 [dependency-groups]

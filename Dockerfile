@@ -1,21 +1,29 @@
+# 빌드 단계
+FROM python:3.11-slim AS builder
+
+RUN apt-get update && \
+    apt-get install -y build-essential gcc g++ && \
+    pip install --no-cache-dir uv && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY pyproject.toml uv.lock* ./
+RUN uv pip install --system --no-cache-dir .
+
+# 최종 단계
 FROM python:3.11-slim
 
-# build-essential 설치 (gcc 포함)
-RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
-
-# install uv via pip (bootstrap only)
-RUN pip install --no-cache-dir uv
+RUN apt-get update && \
+    apt-get install -y gcc g++ && \
+    pip install --no-cache-dir uv && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# copy project metadata first for layer caching
-COPY pyproject.toml uv.lock* ./
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-# install deps with uv
-RUN uv sync
-
-# copy app code
-COPY app/ ./app/
+RUN uv pip install --system uvicorn
 
 EXPOSE 9082
 
@@ -23,5 +31,7 @@ ENV HOST=0.0.0.0 \
     PORT=9082 \
     MODEL_PATH=models/latest \
     DATA_PATH=data/serving_train_finetuned.csv
+
+COPY app /app/app
 
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "9082"]
